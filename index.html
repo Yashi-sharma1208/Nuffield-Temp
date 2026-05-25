@@ -3,7 +3,6 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nuffield Health Support</title>
     <style>
         body {
@@ -43,6 +42,57 @@
             color: #444;
             box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
         }
+
+        .conversationState {
+            background-color: rgba(128, 128, 128, 0.5) !important;
+        }
+
+        /* ── Hide the native embedded chat button ── */
+        #embeddedMessagingConversationButton {
+            display: none !important;
+        }
+
+        /* ── Custom Chat Button ── */
+        #customChatBtn {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 99999;
+
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            background: #00a000;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            padding: 16px 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(0, 160, 0, 0.4);
+
+            font-family: Arial, sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+
+            transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+        }
+
+        #customChatBtn:hover {
+            background: #008500;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(0, 160, 0, 0.5);
+        }
+
+        #customChatBtn:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 12px rgba(0, 160, 0, 0.4);
+        }
+
+        #customChatBtn svg {
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
@@ -56,236 +106,187 @@
         <img src="https://cdn-icons-png.flaticon.com/512/2966/2966327.png" alt="Hospital Icon">
         <div class="info-box">
             Welcome to Nuffield Health Support.
-            <br><br>
+            
+
+
             You can use the chat button (bottom-right) to ask questions or book an appointment.
-            <br><br>
+            
+
+
             Our support bot will assist you shortly.
         </div>
     </div>
 
-    <script>
-        (function () {
+    <!-- Custom Chat Button -->
+    <button id="customChatBtn" aria-label="Open chat support" onclick="openEmbeddedChat()">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+             xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="16" rx="3" ry="3"
+                  stroke="white" stroke-width="2" fill="none"/>
+            <circle cx="7" cy="10" r="1.2" fill="white"/>
+            <circle cx="12" cy="10" r="1.2" fill="white"/>
+            <circle cx="17" cy="10" r="1.2" fill="white"/>
+            <path d="M6 18 L4 22 L10 19" fill="white" stroke="white"
+                  stroke-width="0.5" stroke-linejoin="round"/>
+        </svg>
+        Talk to us
+    </button>
 
-            // ── 1. Hide native Salesforce button ALWAYS on all screens ──
-            const style = document.createElement('style');
-            style.textContent = `
-                #embeddedMessagingConversationButton,
-                .embeddedMessagingConversationButtonWrapper {
-                    display: none !important;
-                    pointer-events: none !important;
-                }
-                #embeddedMessagingFrame.isMinimized {
-                    display: none !important;
-                    pointer-events: none !important;
-                }
-            `;
-            document.head.appendChild(style);
+<script type='text/javascript'>
 
-            // ── 2. Create custom button (Now standard sizing for all devices) ──
-            const chatBtn = document.createElement('div');
-            chatBtn.id = 'customChatBtn';
-            chatBtn.title = 'Talk to us';
-            
-            // Note: Changed width/height from vmin/vmax to standard pixel sizing 
-            // so it remains legible and square on smaller mobile viewports.
-            chatBtn.style.cssText = `
-                position: fixed;
-                bottom: clamp(16px, 4vw, 28px);
-                right: clamp(16px, 4vw, 28px);
-                width: 10%;
-                height: 60px;
-                overflow: hidden;
-                z-index: 99999;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            `;
-            
-            const img = document.createElement('img');
-            img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
-            img.style.cssText = `
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                display: block;
-            `;
+    // ── Show / Hide helpers ──────────────────────────────────────────
+    function showCustomBtn() {
+        document.getElementById('customChatBtn').style.display = 'flex';
+    }
 
-            chatBtn.appendChild(img);
-            chatBtn.addEventListener('click', openEmbeddedChat);
-            chatBtn.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    openEmbeddedChat();
-                }
-            });
+    function hideCustomBtn() {
+        document.getElementById('customChatBtn').style.display = 'none';
+    }
 
-            document.body.appendChild(chatBtn);
+    // ── Re-show custom button when window is closed or minimized ─────
+    window.addEventListener('onEmbeddedMessagingWindowClosed', () => {
+        showCustomBtn();
+    });
 
-            // ── 3. Show / Hide custom button helpers ──────────────────────────────
-            function showCustomBtn() {
-                const btn = document.getElementById('customChatBtn');
-                if (btn) btn.style.display = 'flex';
+    window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
+        showCustomBtn();
+    });
+
+    // ── Hide custom button when window is maximized again ────────────
+    window.addEventListener('onEmbeddedMessagingWindowMaximized', () => {
+        hideCustomBtn();
+    });
+
+    // ── Open chat using official API with DOM click fallback ─────────
+    function openEmbeddedChat() {
+        try {
+            embeddedservice_bootstrap.utilAPI.launchChat();
+        } catch (e) {
+            console.warn('utilAPI.launchChat() failed, falling back to DOM click:', e);
+            const embeddedBtn = document.getElementById('embeddedMessagingConversationButton');
+            if (embeddedBtn) {
+                embeddedBtn.style.setProperty('display', 'block', 'important');
+                embeddedBtn.click();
+                embeddedBtn.style.setProperty('display', 'none', 'important');
+            } else {
+                waitForEmbeddedBtn();
             }
+        }
+        hideCustomBtn();
+    }
 
-            function hideCustomBtn() {
-                const btn = document.getElementById('customChatBtn');
-                if (btn) btn.style.display = 'none';
+    // ── Fallback: poll for embedded button if not yet in DOM ─────────
+    function waitForEmbeddedBtn() {
+        const maxAttempts = 20;
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            const embeddedBtn = document.getElementById('embeddedMessagingConversationButton');
+            if (embeddedBtn) {
+                clearInterval(interval);
+                embeddedBtn.style.setProperty('display', 'block', 'important');
+                embeddedBtn.click();
+                embeddedBtn.style.setProperty('display', 'none', 'important');
+            } else if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                console.error('Embedded chat button not found after polling.');
+                showCustomBtn();
             }
+        }, 300);
+    }
 
-            // ── 4. Embedded Messaging window event listeners ──────────────────────
-            window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
-                showCustomBtn();
+    // ── CXone chat initialisation ────────────────────────────────────
+    function startCxoneChat(firstName, transcriptId, skillId) {
+        console.log('Entered into startCxoneChat');
+        (function (n, u) {
+            window.CXoneDfo = n,
+                window[n] = window[n] || function () { (window[n].q = window[n].q || []).push(arguments) }, window[n].u = u,
+                e = document.createElement("script"), e.type = "module", e.src = u + "?" + Math.round(Date.now() / 1e3 / 3600),
+                document.head.appendChild(e)
+        })('cxone', 'https://web-modules-de-uk1.niceincontact.com/loader/1/loader.js');
+
+        cxone('init', '1152');
+        cxone('chat', 'init', 1152, 'chat_77cdeb00-0c80-41cb-874b-0e7df1067e0c');
+        cxone('chat', 'setCustomerName', firstName);
+        cxone('chat', 'setCustomField', 'nuffskill', skillId);
+        cxone('chat', 'setCustomField', 'sfticketid', transcriptId);
+        cxone('chat', 'setCustomField', 'sftranscriptid', transcriptId);
+        cxone('chat', 'sendFirstMessageAutomatically', 'Welcome to Nuffield Support. How can I help you?');
+        cxone('chat', 'setCustomCss', '[data-selector-item="START_NEW_CHAT"] {display: none !important;};');
+        cxone('chat', 'chat', 'hideSystemMessages');
+        cxone('chat', 'hideSendTranscript');
+        cxone('chat', 'enableChatAlwaysOnline');
+        cxone('chat', 'hidePreSurvey');
+        cxone('chat', 'openChatWindow');
+        cxone('chat', 'autoStartSession');
+    }
+
+    function getSkillId(messageText) {
+        const text = messageText.toLowerCase();
+        if (text.includes('appointment cancellation')) return '31531982';
+        if (text.includes('appointment booking')) return '29204808';
+        return '29204809';
+    }
+
+    // ── Salesforce Embedded Messaging init ───────────────────────────
+    function initEmbeddedMessaging() {
+        let firstName = "";
+        let transcriptId = "";
+        let skillId = "";
+        try {
+            embeddedservice_bootstrap.settings.language = 'en_US';
+
+            window.addEventListener("onEmbeddedMessagingPreChatSubmitted", ({ detail }) => {
+                const { _firstName } = detail.prechatSubmitFields;
+                firstName = _firstName;
             });
 
-            window.addEventListener('onEmbeddedMessagingWindowClosed', () => {
-                showCustomBtn();
-            });
+            const IDLE_TIME = 5 * 60 * 1000;
+            let idleTimer = null;
 
-            window.addEventListener('onEmbeddedMessagingWindowMaximized', () => {
-                hideCustomBtn();
-            });
+            window.addEventListener("onEmbeddedMessageSent", (event) => {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => {
+                    embeddedservice_bootstrap.userVerificationAPI.clearSession(true);
+                }, IDLE_TIME);
 
-            // ── 5. Open chat — official API with DOM click fallback ───────────────
-            function openEmbeddedChat() {
-                try {
-                    embeddedservice_bootstrap.utilAPI.launchChat();
-                } catch (e) {
-                    console.warn('utilAPI.launchChat() failed, falling back to DOM click:', e);
-                    const embeddedBtn = document.getElementById('embeddedMessagingConversationButton');
-                    if (embeddedBtn) {
-                        embeddedBtn.style.setProperty('display', 'block', 'important');
-                        embeddedBtn.click();
-                        embeddedBtn.style.setProperty('display', 'none', 'important');
-                    } else {
-                        waitForEmbeddedBtn();
+                const payload = JSON.parse(event.detail.conversationEntry.entryPayload);
+                const messageText = payload.abstractMessage?.staticContent?.text;
+
+                console.log("Extracted text:", messageText);
+
+                if (!transcriptId && messageText && messageText.toLowerCase().includes("your chat id")) {
+                    const match = messageText.match(/Your chat ID is\s*([A-Za-z0-9-]+)/i);
+                    if (match && match[1]) {
+                        transcriptId = match[1].trim();
+                        console.log('Transcript Id - ' + transcriptId);
                     }
                 }
-                hideCustomBtn();
-            }
 
-            // ── 6. Fallback: poll for embedded button if not in DOM yet ───────────
-            function waitForEmbeddedBtn() {
-                const maxAttempts = 20;
-                let attempts = 0;
-                const interval = setInterval(() => {
-                    attempts++;
-                    const embeddedBtn = document.getElementById('embeddedMessagingConversationButton');
-                    if (embeddedBtn) {
-                        clearInterval(interval);
-                        embeddedBtn.style.setProperty('display', 'block', 'important');
-                        embeddedBtn.click();
-                        embeddedBtn.style.setProperty('display', 'none', 'important');
-                    } else if (attempts >= maxAttempts) {
-                        clearInterval(interval);
-                        console.error('Embedded chat button not found after polling.');
-                        showCustomBtn();
-                    }
-                }, 300);
-            }
-
-            // ── 7. CXone chat initialisation ──────────────────────────────────────
-            function startCxoneChat(firstName, transcriptId, skillId) {
-                console.log('Entered into startCxoneChat');
-                (function (n, u) {
-                    window.CXoneDfo = n,
-                        window[n] = window[n] || function () {
-                            (window[n].q = window[n].q || []).push(arguments)
-                        }, window[n].u = u,
-                        e = document.createElement("script"), e.type = "module", e.src = u + "?" + Math.round(Date.now() / 1e3 / 3600),
-                        document.head.appendChild(e)
-                })('cxone', 'https://web-modules-de-uk1.niceincontact.com/loader/1/loader.js');
-
-                cxone('init', '1152');
-                cxone('chat', 'init', 1152, 'chat_77cdeb00-0c80-41cb-874b-0e7df1067e0c');
-                cxone('chat', 'setCustomerName', firstName);
-                cxone('chat', 'setCustomField', 'nuffskill', skillId);
-                cxone('chat', 'setCustomField', 'sfticketid', transcriptId);
-                cxone('chat', 'setCustomField', 'sftranscriptid', transcriptId);
-                cxone('chat', 'sendFirstMessageAutomatically', 'Welcome to Nuffield Support. How can I help you?');
-                cxone('chat', 'setCustomCss', '[data-selector-item="START_NEW_CHAT"] {display: none !important;};');
-                cxone('chat', 'chat', 'hideSystemMessages');
-                cxone('chat', 'hideSendTranscript');
-                cxone('chat', 'enableChatAlwaysOnline');
-                cxone('chat', 'hidePreSurvey');
-                cxone('chat', 'openChatWindow');
-                cxone('chat', 'autoStartSession');
-            }
-
-            // ── 8. Get skill ID based on message content ──────────────────────────
-            function getSkillId(messageText) {
-                const text = messageText.toLowerCase();
-                if (text.includes('appointment cancellation')) return '31531982';
-                if (text.includes('appointment booking')) return '29204808';
-                return '29204809';
-            }
-
-            // ── 9. Salesforce Embedded Messaging init ─────────────────────────────
-            function initEmbeddedMessaging() {
-                let firstName = "";
-                let transcriptId = "";
-                let skillId = "";
-                try {
-                    embeddedservice_bootstrap.settings.language = 'en_US';
-
-                    window.addEventListener("onEmbeddedMessagingPreChatSubmitted", ({ detail }) => {
-                        const { _firstName } = detail.prechatSubmitFields;
-                        firstName = _firstName;
-                    });
-
-                    const IDLE_TIME = 5 * 60 * 1000;
-                    let idleTimer = null;
-
-                    window.addEventListener("onEmbeddedMessageSent", (event) => {
-                        clearTimeout(idleTimer);
-                        idleTimer = setTimeout(() => {
-                            embeddedservice_bootstrap.userVerificationAPI.clearSession(true);
-                        }, IDLE_TIME);
-
-                        const payload = JSON.parse(event.detail.conversationEntry.entryPayload);
-                        const messageText = payload.abstractMessage?.staticContent?.text;
-
-                        console.log("Extracted text:", messageText);
-
-                        if (!transcriptId && messageText && messageText.toLowerCase().includes("your chat id")) {
-                            const match = messageText.match(/Your chat ID is\s*([A-Za-z0-9-]+)/i);
-                            if (match && match[1]) {
-                                transcriptId = match[1].trim();
-                                console.log('Transcript Id - ' + transcriptId);
-                            }
-                        }
-
-                        if (messageText.includes('Transferring the chat to a support executive')) {
-                            skillId = getSkillId(messageText);
-                            startCxoneChat(firstName, transcriptId, skillId);
-                            setTimeout(() => {
-                                embeddedservice_bootstrap.userVerificationAPI.clearSession(true);
-                            }, 4000);
-                        }
-                    });
-
-                    embeddedservice_bootstrap.init(
-                        '00DS900000DRZFB',
-                        'Agentforce_Customer_Support',
-                        'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106',
-                        {
-                            scrt2URL: 'https://nuffieldhealth-crm--mintdev.sandbox.my.salesforce-scrt.com'
-                        }
-                    );
-                } catch (err) {
-                    console.error('Error loading Embedded Messaging: ', err);
+                if (messageText.includes('Transferring the chat to a support executive')) {
+                    skillId = getSkillId(messageText);
+                    startCxoneChat(firstName, transcriptId, skillId);
+                    setTimeout(() => {
+                        embeddedservice_bootstrap.userVerificationAPI.clearSession(true);
+                    }, 4000);
                 }
-            }
+            });
 
-            // ── 10. Load Salesforce bootstrap script & kick off init ───────────────
-            const sfScript = document.createElement('script');
-            sfScript.type = 'text/javascript';
-            sfScript.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106/assets/js/bootstrap.min.js';
-            sfScript.onload = initEmbeddedMessaging;
-            document.body.appendChild(sfScript);
+            embeddedservice_bootstrap.init(
+                '00DS900000DRZFB',
+                'Agentforce_Customer_Support',
+                'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106',
+                {
+                    scrt2URL: 'https://nuffieldhealth-crm--mintdev.sandbox.my.salesforce-scrt.com'
+                }
+            );
+        } catch (err) {
+            console.error('Error loading Embedded Messaging: ', err);
+        }
+    };
+</script>
 
-        })();
-    </script>
+<script type='text/javascript' src='https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
 
 </body>
 </html>
