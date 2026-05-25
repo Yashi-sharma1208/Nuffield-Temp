@@ -67,384 +67,256 @@
         </div>
     </div>
 
-<script>
-(function () {
+    <script>
+        (function () {
 
-    // ── 1. ALWAYS hide native Salesforce button ───────────────────────────
-    const style = document.createElement('style');
-    style.textContent = `
-        #embeddedMessagingConversationButton,
-        .embeddedMessagingConversationButtonWrapper {
-            display: none !important;
-            visibility: hidden !important;
-            pointer-events: none !important;
-        }
-
-        #embeddedMessagingFrame.isMinimized {
-            display: none !important;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // ── 2. Create custom button (VISIBLE ON ALL SCREENS) ──────────────────
-    const chatBtn = document.createElement('div');
-    chatBtn.id = 'customChatBtn';
-    chatBtn.title = 'Talk to us';
-
-    chatBtn.style.cssText = `
-        position: fixed;
-        bottom: 16px;
-        right: 16px;
-
-        width: clamp(120px, 24vw, 220px);
-        height: clamp(50px, 10vw, 90px);
-
-        overflow: hidden;
-
-        z-index: 99999;
-        cursor: pointer;
-
-        display: flex;
-
-        align-items: center;
-        justify-content: center;
-    `;
-
-    const img = document.createElement('img');
-
-    img.src =
-        'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
-
-    img.style.cssText = `
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        display:block;
-    `;
-
-    chatBtn.appendChild(img);
-
-    chatBtn.addEventListener('click', openEmbeddedChat);
-
-    chatBtn.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openEmbeddedChat();
-        }
-    });
-
-    document.body.appendChild(chatBtn);
-
-    // ── 3. Button visibility helpers ──────────────────────────────────────
-    function showCustomBtn() {
-        const btn = document.getElementById('customChatBtn');
-        if (btn) btn.style.display = 'flex';
-    }
-
-    function hideCustomBtn() {
-        const btn = document.getElementById('customChatBtn');
-        if (btn) btn.style.display = 'none';
-    }
-
-    // ── 4. Embedded Messaging window listeners ────────────────────────────
-    window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
-        showCustomBtn();
-    });
-
-    window.addEventListener('onEmbeddedMessagingWindowClosed', () => {
-        showCustomBtn();
-    });
-
-    window.addEventListener('onEmbeddedMessagingWindowMaximized', () => {
-        hideCustomBtn();
-    });
-
-    // ── 5. Open chat ──────────────────────────────────────────────────────
-    function openEmbeddedChat() {
-        try {
-            embeddedservice_bootstrap.utilAPI.launchChat();
-        } catch (e) {
-
-            console.warn(
-                'utilAPI.launchChat() failed, using DOM fallback:',
-                e
-            );
-
-            const embeddedBtn =
-                document.getElementById(
-                    'embeddedMessagingConversationButton'
-                );
-
-            if (embeddedBtn) {
-                embeddedBtn.style.setProperty(
-                    'display',
-                    'block',
-                    'important'
-                );
-
-                embeddedBtn.click();
-
-                embeddedBtn.style.setProperty(
-                    'display',
-                    'none',
-                    'important'
-                );
-            } else {
-                waitForEmbeddedBtn();
-            }
-        }
-
-        hideCustomBtn();
-    }
-
-    // ── 6. Wait for Salesforce button ─────────────────────────────────────
-    function waitForEmbeddedBtn() {
-
-        let attempts = 0;
-        const maxAttempts = 20;
-
-        const interval = setInterval(() => {
-
-            attempts++;
-
-            const embeddedBtn =
-                document.getElementById(
-                    'embeddedMessagingConversationButton'
-                );
-
-            if (embeddedBtn) {
-
-                clearInterval(interval);
-
-                embeddedBtn.style.setProperty(
-                    'display',
-                    'block',
-                    'important'
-                );
-
-                embeddedBtn.click();
-
-                embeddedBtn.style.setProperty(
-                    'display',
-                    'none',
-                    'important'
-                );
-
-            } else if (attempts >= maxAttempts) {
-
-                clearInterval(interval);
-
-                console.error(
-                    'Embedded button not found.'
-                );
-
-                showCustomBtn();
-            }
-
-        }, 300);
-    }
-
-    // ── 7. CXone chat initialisation ──────────────────────────────────────
-    function startCxoneChat(firstName, transcriptId, skillId) {
-        console.log('Entered into startCxoneChat');
-
-        (function (n, u) {
-            window.CXoneDfo = n;
-
-            window[n] =
-                window[n] ||
-                function () {
-                    (window[n].q =
-                        window[n].q || []).push(arguments);
-                };
-
-            window[n].u = u;
-
-            e = document.createElement("script");
-
-            e.type = "module";
-
-            e.src =
-                u +
-                "?" +
-                Math.round(
-                    Date.now() / 1e3 / 3600
-                );
-
-            document.head.appendChild(e);
-
-        })(
-            'cxone',
-            'https://web-modules-de-uk1.niceincontact.com/loader/1/loader.js'
-        );
-
-        cxone('init', '1152');
-        cxone('chat', 'init', 1152, 'chat_77cdeb00-0c80-41cb-874b-0e7df1067e0c');
-        cxone('chat', 'setCustomerName', firstName);
-        cxone('chat', 'setCustomField', 'nuffskill', skillId);
-        cxone('chat', 'setCustomField', 'sfticketid', transcriptId);
-        cxone('chat', 'setCustomField', 'sftranscriptid', transcriptId);
-        cxone('chat', 'sendFirstMessageAutomatically', 'Welcome to Nuffield Support. How can I help you?');
-        cxone('chat', 'setCustomCss', '[data-selector-item="START_NEW_CHAT"] {display:none!important;}');
-        cxone('chat', 'chat', 'hideSystemMessages');
-        cxone('chat', 'hideSendTranscript');
-        cxone('chat', 'enableChatAlwaysOnline');
-        cxone('chat', 'hidePreSurvey');
-        cxone('chat', 'openChatWindow');
-        cxone('chat', 'autoStartSession');
-    }
-
-    // ── 8. Get skill ID ───────────────────────────────────────────────────
-    function getSkillId(messageText) {
-
-        const text = messageText.toLowerCase();
-
-        if (text.includes('appointment cancellation'))
-            return '31531982';
-
-        if (text.includes('appointment booking'))
-            return '29204808';
-
-        return '29204809';
-    }
-
-    // ── 9. Salesforce init (UNCHANGED) ────────────────────────────────────
-    function initEmbeddedMessaging() {
-
-        let firstName = "";
-        let transcriptId = "";
-        let skillId = "";
-
-        try {
-
-            embeddedservice_bootstrap.settings.language = 'en_US';
-
-            window.addEventListener(
-                "onEmbeddedMessagingPreChatSubmitted",
-                ({ detail }) => {
-                    firstName =
-                        detail.prechatSubmitFields._firstName;
+            // ── 1. Hide native Salesforce button ONLY on screens wider than 700px ──
+            const style = document.createElement('style');
+            style.textContent = `
+                @media (min-width: 701px) {
+                    #embeddedMessagingConversationButton,
+                    .embeddedMessagingConversationButtonWrapper {
+                        display: none !important;
+                        pointer-events: none !important;
+                    }
+                    #embeddedMessagingFrame.isMinimized {
+                        display: none !important;
+                        pointer-events: none !important;
+                    }
                 }
-            );
+            `;
+            document.head.appendChild(style);
 
-            const IDLE_TIME =
-                5 * 60 * 1000;
+            // ── 2. Reliable width check using matchMedia ──────────────────────────
+            // matchMedia respects the viewport meta tag on real devices,
+            // making it the most reliable method across DevTools and real phones
+            const mqlWide = window.matchMedia('(min-width: 701px)');
 
-            let idleTimer = null;
+            function isWideScreen() {
+                return mqlWide.matches;
+            }
 
-            window.addEventListener(
-                "onEmbeddedMessageSent",
-                (event) => {
+            // ── 3. Create custom button ───────────────────────────────────────────
+            const chatBtn = document.createElement('div');
+            chatBtn.id = 'customChatBtn';
+            chatBtn.title = 'Talk to us';
+            chatBtn.style.cssText = `
+    position: fixed;
+    bottom: clamp(16px, 2vw, 28px);
+    right: clamp(16px, 2vw, 28px);
+    width: 10vw;
+    height: 5vh;
+    overflow: hidden;
+    z-index: 99999;
+    cursor: pointer;
+    display: ${isWideScreen() ? 'flex' : 'none'};
+    align-items: center;
+    justify-content: center;
+`;
+            const img = document.createElement('img');
+            img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
+            img.style.cssText = `
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+            `;
 
-                    clearTimeout(idleTimer);
+            chatBtn.appendChild(img);
+            chatBtn.addEventListener('click', openEmbeddedChat);
+            chatBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openEmbeddedChat();
+                }
+            });
 
-                    idleTimer =
-                        setTimeout(() => {
+            document.body.appendChild(chatBtn);
+
+            // ── 4. Show / Hide custom button helpers ──────────────────────────────
+            function showCustomBtn() {
+                if (isWideScreen()) {
+                    const btn = document.getElementById('customChatBtn');
+                    if (btn) btn.style.display = 'flex';
+                }
+            }
+
+            function hideCustomBtn() {
+                const btn = document.getElementById('customChatBtn');
+                if (btn) btn.style.display = 'none';
+            }
+
+            // ── 5. matchMedia change listener ─────────────────────────────────────
+            mqlWide.addEventListener('change', (e) => {
+                const btn = document.getElementById('customChatBtn');
+                if (!btn) return;
+
+                if (!e.matches) {
+                    // ≤700px — hide custom button, native SF button takes over
+                    btn.style.display = 'none';
+                } else {
+                    // >700px — show custom button if chat is not currently open
+                    const frame = document.getElementById('embeddedMessagingFrame');
+                    const isOpen = frame &&
+                        !frame.classList.contains('isMinimized') &&
+                        frame.style.display !== 'none';
+                    if (!isOpen) btn.style.display = 'flex';
+                }
+            });
+
+            // ── 6. Embedded Messaging window event listeners ──────────────────────
+            window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
+                showCustomBtn();
+            });
+
+            window.addEventListener('onEmbeddedMessagingWindowClosed', () => {
+                showCustomBtn();
+            });
+
+            window.addEventListener('onEmbeddedMessagingWindowMaximized', () => {
+                hideCustomBtn();
+            });
+
+            // ── 7. Open chat — official API with DOM click fallback ───────────────
+            function openEmbeddedChat() {
+                try {
+                    embeddedservice_bootstrap.utilAPI.launchChat();
+                } catch (e) {
+                    console.warn('utilAPI.launchChat() failed, falling back to DOM click:', e);
+                    const embeddedBtn = document.getElementById('embeddedMessagingConversationButton');
+                    if (embeddedBtn) {
+                        embeddedBtn.style.setProperty('display', 'block', 'important');
+                        embeddedBtn.click();
+                        embeddedBtn.style.setProperty('display', 'none', 'important');
+                    } else {
+                        waitForEmbeddedBtn();
+                    }
+                }
+                hideCustomBtn();
+            }
+
+            // ── 8. Fallback: poll for embedded button if not in DOM yet ───────────
+            function waitForEmbeddedBtn() {
+                const maxAttempts = 20;
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    const embeddedBtn = document.getElementById('embeddedMessagingConversationButton');
+                    if (embeddedBtn) {
+                        clearInterval(interval);
+                        embeddedBtn.style.setProperty('display', 'block', 'important');
+                        embeddedBtn.click();
+                        embeddedBtn.style.setProperty('display', 'none', 'important');
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        console.error('Embedded chat button not found after polling.');
+                        showCustomBtn();
+                    }
+                }, 300);
+            }
+
+            // ── 9. CXone chat initialisation ──────────────────────────────────────
+            function startCxoneChat(firstName, transcriptId, skillId) {
+                console.log('Entered into startCxoneChat');
+                (function (n, u) {
+                    window.CXoneDfo = n,
+                        window[n] = window[n] || function () {
+                            (window[n].q = window[n].q || []).push(arguments)
+                        }, window[n].u = u,
+                        e = document.createElement("script"), e.type = "module", e.src = u + "?" + Math.round(Date.now() / 1e3 / 3600),
+                        document.head.appendChild(e)
+                })('cxone', 'https://web-modules-de-uk1.niceincontact.com/loader/1/loader.js');
+
+                cxone('init', '1152');
+                cxone('chat', 'init', 1152, 'chat_77cdeb00-0c80-41cb-874b-0e7df1067e0c');
+                cxone('chat', 'setCustomerName', firstName);
+                cxone('chat', 'setCustomField', 'nuffskill', skillId);
+                cxone('chat', 'setCustomField', 'sfticketid', transcriptId);
+                cxone('chat', 'setCustomField', 'sftranscriptid', transcriptId);
+                cxone('chat', 'sendFirstMessageAutomatically', 'Welcome to Nuffield Support. How can I help you?');
+                cxone('chat', 'setCustomCss', '[data-selector-item="START_NEW_CHAT"] {display: none !important;};');
+                cxone('chat', 'chat', 'hideSystemMessages');
+                cxone('chat', 'hideSendTranscript');
+                cxone('chat', 'enableChatAlwaysOnline');
+                cxone('chat', 'hidePreSurvey');
+                cxone('chat', 'openChatWindow');
+                cxone('chat', 'autoStartSession');
+            }
+
+            // ── 10. Get skill ID based on message content ──────────────────────────
+            function getSkillId(messageText) {
+                const text = messageText.toLowerCase();
+                if (text.includes('appointment cancellation')) return '31531982';
+                if (text.includes('appointment booking')) return '29204808';
+                return '29204809';
+            }
+
+            // ── 11. Salesforce Embedded Messaging init ─────────────────────────────
+            function initEmbeddedMessaging() {
+                let firstName = "";
+                let transcriptId = "";
+                let skillId = "";
+                try {
+                    embeddedservice_bootstrap.settings.language = 'en_US';
+
+                    window.addEventListener("onEmbeddedMessagingPreChatSubmitted", ({ detail }) => {
+                        const { _firstName } = detail.prechatSubmitFields;
+                        firstName = _firstName;
+                    });
+
+                    const IDLE_TIME = 5 * 60 * 1000;
+                    let idleTimer = null;
+
+                    window.addEventListener("onEmbeddedMessageSent", (event) => {
+                        clearTimeout(idleTimer);
+                        idleTimer = setTimeout(() => {
                             embeddedservice_bootstrap.userVerificationAPI.clearSession(true);
                         }, IDLE_TIME);
 
-                    const payload =
-                        JSON.parse(
-                            event.detail
-                                .conversationEntry
-                                .entryPayload
-                        );
+                        const payload = JSON.parse(event.detail.conversationEntry.entryPayload);
+                        const messageText = payload.abstractMessage?.staticContent?.text;
 
-                    const messageText =
-                        payload
-                            .abstractMessage
-                            ?.staticContent
-                            ?.text;
+                        console.log("Extracted text:", messageText);
 
-                    if (
-                        !transcriptId &&
-                        messageText &&
-                        messageText
-                            .toLowerCase()
-                            .includes(
-                                "your chat id"
-                            )
-                    ) {
-
-                        const match =
-                            messageText.match(
-                                /Your chat ID is\s*([A-Za-z0-9-]+)/i
-                            );
-
-                        if (
-                            match &&
-                            match[1]
-                        ) {
-                            transcriptId =
-                                match[1].trim();
+                        if (!transcriptId && messageText && messageText.toLowerCase().includes("your chat id")) {
+                            const match = messageText.match(/Your chat ID is\s*([A-Za-z0-9-]+)/i);
+                            if (match && match[1]) {
+                                transcriptId = match[1].trim();
+                                console.log('Transcript Id - ' + transcriptId);
+                            }
                         }
-                    }
 
-                    if (
-                        messageText &&
-                        messageText.includes(
-                            'Transferring the chat to a support executive'
-                        )
-                    ) {
+                        if (messageText.includes('Transferring the chat to a support executive')) {
+                            skillId = getSkillId(messageText);
+                            startCxoneChat(firstName, transcriptId, skillId);
+                            setTimeout(() => {
+                                embeddedservice_bootstrap.userVerificationAPI.clearSession(true);
+                            }, 4000);
+                        }
+                    });
 
-                        skillId =
-                            getSkillId(
-                                messageText
-                            );
-
-                        startCxoneChat(
-                            firstName,
-                            transcriptId,
-                            skillId
-                        );
-
-                        setTimeout(() => {
-                            embeddedservice_bootstrap.userVerificationAPI.clearSession(true);
-                        }, 4000);
-                    }
+                    embeddedservice_bootstrap.init(
+                        '00DS900000DRZFB',
+                        'Agentforce_Customer_Support',
+                        'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106',
+                        {
+                            scrt2URL: 'https://nuffieldhealth-crm--mintdev.sandbox.my.salesforce-scrt.com'
+                        }
+                    );
+                } catch (err) {
+                    console.error('Error loading Embedded Messaging: ', err);
                 }
-            );
+            }
 
-            embeddedservice_bootstrap.init(
-                '00DS900000DRZFB',
-                'Agentforce_Customer_Support',
-                'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106',
-                {
-                    scrt2URL:
-                        'https://nuffieldhealth-crm--mintdev.sandbox.my.salesforce-scrt.com'
-                }
-            );
+            // ── 12. Load Salesforce bootstrap script & kick off init ───────────────
+            const sfScript = document.createElement('script');
+            sfScript.type = 'text/javascript';
+            sfScript.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106/assets/js/bootstrap.min.js';
+            sfScript.onload = initEmbeddedMessaging;
+            document.body.appendChild(sfScript);
 
-        } catch (err) {
-
-            console.error(
-                'Error loading Embedded Messaging:',
-                err
-            );
-        }
-    }
-
-    // ── 10. Load Salesforce bootstrap ────────────────────────────────────
-    const sfScript =
-        document.createElement(
-            'script'
-        );
-
-    sfScript.type =
-        'text/javascript';
-
-    sfScript.src =
-        'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106/assets/js/bootstrap.min.js';
-
-    sfScript.onload =
-        initEmbeddedMessaging;
-
-    document.body.appendChild(
-        sfScript
-    );
-
-})();
-</script>
+        })();
+    </script>
 
 </body>
 </html>
