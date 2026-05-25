@@ -66,7 +66,7 @@
     <script>
         (function () {
 
-            // ── 1. Hide native Salesforce button everywhere ─────────────────────
+            // ── 1. Hide native Salesforce button elements globally ───────────────
             const style = document.createElement('style');
             style.textContent = `
                 #embeddedMessagingConversationButton,
@@ -86,14 +86,14 @@
             chatBtn.id = 'customChatBtn';
             chatBtn.title = 'Talk to us';
             
-            // Note: Adjusted static dimensions or media queries might be needed for mobile screens, 
-            // but the functional visibility logic is now applied universally.
+            // Fixed mobile sizing: used explicit pixel fallback for mobile safety
             chatBtn.style.cssText = `
                 position: fixed;
-                bottom: clamp(16px, 2vw, 28px);
-                right: clamp(16px, 2vw, 28px);
-                width: clamp(60px, 10vw, 120px);
-                height: clamp(60px, 10vw, 120px);
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
                 overflow: hidden;
                 z-index: 99999;
                 cursor: pointer;
@@ -133,7 +133,24 @@
                 if (btn) btn.style.display = 'none';
             }
 
-            // ── 4. Embedded Messaging window event listeners ──────────────────────
+            // ── 4. Robust DOM Monitoring fallback for Mobile state management ────
+            // This catches minimizing updates even if window events fail to fire on mobile devices
+            const observer = new MutationObserver(() => {
+                const frame = document.getElementById('embeddedMessagingFrame');
+                if (frame) {
+                    const isMinimized = frame.classList.contains('isMinimized') || frame.style.display === 'none';
+                    if (isMinimized) {
+                        showCustomBtn();
+                    } else {
+                        hideCustomBtn();
+                    }
+                }
+            });
+
+            // Start observing the document body for Salesforce frame injections
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // ── 5. Embedded Messaging window event listeners ──────────────────────
             window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
                 showCustomBtn();
             });
@@ -146,7 +163,7 @@
                 hideCustomBtn();
             });
 
-            // ── 5. Open chat — official API with DOM click fallback ───────────────
+            // ── 6. Open chat — official API with DOM click fallback ───────────────
             function openEmbeddedChat() {
                 try {
                     embeddedservice_bootstrap.utilAPI.launchChat();
@@ -164,7 +181,7 @@
                 hideCustomBtn();
             }
 
-            // ── 6. Fallback: poll for embedded button if not in DOM yet ───────────
+            // ── 7. Fallback: poll for embedded button if not in DOM yet ───────────
             function waitForEmbeddedBtn() {
                 const maxAttempts = 20;
                 let attempts = 0;
@@ -184,7 +201,7 @@
                 }, 300);
             }
 
-            // ── 7. CXone chat initialisation ──────────────────────────────────────
+            // ── 8. CXone chat initialisation ──────────────────────────────────────
             function startCxoneChat(firstName, transcriptId, skillId) {
                 console.log('Entered into startCxoneChat');
                 (function (n, u) {
@@ -212,7 +229,7 @@
                 cxone('chat', 'autoStartSession');
             }
 
-            // ── 8. Get skill ID based on message content ──────────────────────────
+            // ── 9. Get skill ID based on message content ──────────────────────────
             function getSkillId(messageText) {
                 const text = messageText.toLowerCase();
                 if (text.includes('appointment cancellation')) return '31531982';
@@ -220,7 +237,7 @@
                 return '29204809';
             }
 
-            // ── 9. Salesforce Embedded Messaging init ─────────────────────────────
+            // ── 10. Salesforce Embedded Messaging init ─────────────────────────────
             function initEmbeddedMessaging() {
                 let firstName = "";
                 let transcriptId = "";
@@ -277,7 +294,7 @@
                 }
             }
 
-            // ── 10. Load Salesforce bootstrap script & kick off init ───────────────
+            // ── 11. Load Salesforce bootstrap script & kick off init ───────────────
             const sfScript = document.createElement('script');
             sfScript.type = 'text/javascript';
             sfScript.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106/assets/js/bootstrap.min.js';
