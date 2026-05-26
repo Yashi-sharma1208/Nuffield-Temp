@@ -113,7 +113,6 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 10%;
             `;
 
             const img = document.createElement('img');
@@ -142,15 +141,12 @@
                     img.src = ICON_WIDE;
                 } else {
                     // Circular button for small screens
-                    btn.style.width        = '20%';
-                    btn.style.height       = '20%';
+                    btn.style.width        = '56px';
+                    btn.style.height       = '56px';
                     btn.style.borderRadius = '50%';
                     img.src = ICON_NARROW;
                 }
             }
-
-            // Apply shape immediately on load
-            applyButtonShape();
 
             chatBtn.addEventListener('click', openEmbeddedChat);
             chatBtn.addEventListener('keydown', (e) => {
@@ -160,7 +156,11 @@
                 }
             });
 
+            // Append first so getElementById() finds the button inside applyButtonShape()
             document.body.appendChild(chatBtn);
+
+            // Apply correct shape + icon now that the button is in the DOM
+            applyButtonShape();
 
             // ── 5. Show / Hide custom button helpers ──────────────────────────────
             function showCustomBtn() {
