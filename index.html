@@ -93,7 +93,11 @@
                 return mqlWide.matches;
             }
 
-            // ── 3. Create custom button (always visible, shape depends on width) ──
+            // ── 3. Icon URLs ───────────────────────────────────────────────────────
+            const ICON_WIDE   = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
+            const ICON_NARROW = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779774503000/Agentforce_chat_icon_for_small_screen';
+
+            // ── 4. Create custom button (always visible, shape depends on width) ──
             const chatBtn = document.createElement('div');
             chatBtn.id = 'customChatBtn';
             chatBtn.title = 'Talk to us';
@@ -113,8 +117,8 @@
             `;
 
             const img = document.createElement('img');
-            // src is set correctly by applyButtonShape(); placeholder avoids a broken-image flash
-            img.src = '';
+            // Set correct icon immediately based on current screen width
+            img.src = isWideScreen() ? ICON_WIDE : ICON_NARROW;
             img.style.cssText = `
                 width: 100%;
                 height: 100%;
@@ -124,11 +128,8 @@
 
             chatBtn.appendChild(img);
 
-            // ── 4. Apply shape + image based on current screen width ─────────────
+            // ── 5. Apply shape + image based on current screen width ─────────────
             // Wide (>700px) → rectangular  |  Narrow (≤700px) → circle + different icon
-            const ICON_WIDE   = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
-            const ICON_NARROW = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779774503000/Agentforce_chat_icon_for_small_screen';
-
             function applyButtonShape() {
                 const btn = document.getElementById('customChatBtn');
                 if (!btn) return;
