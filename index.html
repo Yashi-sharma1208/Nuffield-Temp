@@ -71,7 +71,6 @@
         (function () {
 
             // ── 1. Hide native Salesforce button on ALL screen sizes ──────────────
-            // Custom button handles chat launch on every viewport width
             const style = document.createElement('style');
             style.textContent = `
                 #embeddedMessagingConversationButton,
@@ -97,12 +96,11 @@
             const ICON_WIDE   = 'https://nuffieldhealth-crm.my.site.com/resource/1779783750000/Agentforce_chat_icon';
             const ICON_NARROW = 'https://nuffieldhealth-crm.my.site.com/resource/1779783983000/Agentforce_chat_icon_for_mobile';
 
-            // ── 4. Create custom button (always visible, shape depends on width) ──
+            // ── 4. Create custom button ───────────────────────────────────────────
             const chatBtn = document.createElement('div');
             chatBtn.id = 'customChatBtn';
             chatBtn.title = 'Talk to us';
 
-            // Base styles shared by both shapes
             chatBtn.style.cssText = `
                 position: fixed;
                 bottom: clamp(16px, 2vw, 28px);
@@ -116,7 +114,6 @@
             `;
 
             const img = document.createElement('img');
-            // Set correct icon immediately based on current screen width
             img.src = isWideScreen() ? ICON_WIDE : ICON_NARROW;
             img.style.cssText = `
                 width: 100%;
@@ -128,19 +125,16 @@
             chatBtn.appendChild(img);
 
             // ── 5. Apply shape + image based on current screen width ─────────────
-            // Wide (>700px) → rectangular  |  Narrow (≤700px) → circle + different icon
             function applyButtonShape() {
                 const btn = document.getElementById('customChatBtn');
                 if (!btn) return;
 
                 if (isWideScreen()) {
-                    // Rectangular button (original proportions)
                     btn.style.width        = '10vw';
                     btn.style.height       = '5vh';
                     btn.style.borderRadius = '8px';
                     img.src = ICON_WIDE;
                 } else {
-                    // Circular button for small screens
                     btn.style.width        = '56px';
                     btn.style.height       = '56px';
                     btn.style.borderRadius = '50%';
@@ -156,13 +150,10 @@
                 }
             });
 
-            // Append first so getElementById() finds the button inside applyButtonShape()
             document.body.appendChild(chatBtn);
-
-            // Apply correct shape + icon now that the button is in the DOM
             applyButtonShape();
 
-            // ── 5. Show / Hide custom button helpers ──────────────────────────────
+            // ── 6. Show / Hide custom button helpers ──────────────────────────────
             function showCustomBtn() {
                 const btn = document.getElementById('customChatBtn');
                 if (btn) btn.style.display = 'flex';
@@ -173,11 +164,10 @@
                 if (btn) btn.style.display = 'none';
             }
 
-            // ── 6. matchMedia change listener — update shape on resize ────────────
+            // ── 7. matchMedia change listener ─────────────────────────────────────
             mqlWide.addEventListener('change', () => {
                 applyButtonShape();
 
-                // If chat is currently open, keep the button hidden regardless of resize
                 const frame = document.getElementById('embeddedMessagingFrame');
                 const isOpen = frame &&
                     !frame.classList.contains('isMinimized') &&
@@ -185,7 +175,7 @@
                 if (!isOpen) showCustomBtn();
             });
 
-            // ── 7. Embedded Messaging window event listeners ──────────────────────
+            // ── 8. Embedded Messaging window event listeners ──────────────────────
             window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
                 showCustomBtn();
             });
@@ -198,7 +188,7 @@
                 hideCustomBtn();
             });
 
-            // ── 8. Open chat — official API with DOM click fallback ───────────────
+            // ── 9. Open chat ──────────────────────────────────────────────────────
             function openEmbeddedChat() {
                 try {
                     embeddedservice_bootstrap.utilAPI.launchChat();
@@ -216,7 +206,7 @@
                 hideCustomBtn();
             }
 
-            // ── 9. Fallback: poll for embedded button if not in DOM yet ───────────
+            // ── 10. Fallback: poll for embedded button ────────────────────────────
             function waitForEmbeddedBtn() {
                 const maxAttempts = 20;
                 let attempts = 0;
@@ -236,9 +226,8 @@
                 }, 300);
             }
 
-            // ── 10. CXone chat initialisation ──────────────────────────────────────
+            // ── 11. CXone chat initialisation ─────────────────────────────────────
             function startCxoneChat(firstName, transcriptId, skillId) {
-                console.log('Entered into startCxoneChat');
                 (function (n, u) {
                     window.CXoneDfo = n,
                         window[n] = window[n] || function () {
@@ -264,7 +253,7 @@
                 cxone('chat', 'autoStartSession');
             }
 
-            // ── 11. Get skill ID based on message content ──────────────────────────
+            // ── 12. Get skill ID based on message content ─────────────────────────
             function getSkillId(messageText) {
                 const text = messageText.toLowerCase();
                 if (text.includes('appointment cancellation')) return '31531982';
@@ -272,11 +261,12 @@
                 return '29204809';
             }
 
-            // ── 12. Salesforce Embedded Messaging init ─────────────────────────────
+            // ── 13. Salesforce Embedded Messaging init ────────────────────────────
             function initEmbeddedMessaging() {
                 let firstName = "";
                 let transcriptId = "";
-                let skillId = "";
+                let caseNumber = "";
+                let SkillId = "";
                 try {
                     embeddedservice_bootstrap.settings.language = 'en_US';
 
@@ -297,13 +287,10 @@
                         const payload = JSON.parse(event.detail.conversationEntry.entryPayload);
                         const messageText = payload.abstractMessage?.staticContent?.text;
 
-                        console.log("Extracted text:", messageText);
-
                         if (!transcriptId && messageText && messageText.toLowerCase().includes("your chat id")) {
                             const match = messageText.match(/Your chat ID is\s*([A-Za-z0-9-]+)/i);
                             if (match && match[1]) {
                                 transcriptId = match[1].trim();
-                                console.log('Transcript Id - ' + transcriptId);
                             }
                         }
 
@@ -329,7 +316,7 @@
                 }
             }
 
-            // ── 13. Load Salesforce bootstrap script & kick off init ───────────────
+            // ── 14. Load Salesforce bootstrap script & kick off init ──────────────
             const sfScript = document.createElement('script');
             sfScript.type = 'text/javascript';
             sfScript.src = 'https://nuffieldhealth-crm.my.site.com/ESWAgentforceCustomerSu1777529445343/assets/js/bootstrap.min.js';
