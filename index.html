@@ -67,8 +67,8 @@
         (function () {
 
             // ── 1. Hide native Salesforce button ALWAYS on all screens ──
-            const style = document.createElement('style');
-            style.textContent = `
+            const sfHideStyle = document.createElement('style');
+            sfHideStyle.textContent = `
                 #embeddedMessagingConversationButton,
                 .embeddedMessagingConversationButtonWrapper {
                     display: none !important;
@@ -79,61 +79,55 @@
                     pointer-events: none !important;
                 }
             `;
-            document.head.appendChild(style);
+            document.head.appendChild(sfHideStyle);
 
-            // ── 2. Create custom button (Now standard sizing for all devices) ──
-            // ── 2. Create custom button & inject responsive styles via JS ──
-const btnStyle = document.createElement('style');
-btnStyle.textContent = `
-    #customChatBtn {
-        position: fixed;
-        bottom: clamp(16px, 4vw, 28px);
-        right: clamp(16px, 4vw, 28px);
-        width: 10%;
-        height: 60px;
-        overflow: hidden;
-        z-index: 99999;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-    }
-    @media (max-width: 699px) {
-        #customChatBtn {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-        }
-    }
-`;
-document.head.appendChild(btnStyle);
+            // ── 2. Create custom button & apply responsive styles via JS ──
+            const chatBtn = document.createElement('div');
+            chatBtn.id = 'customChatBtn';
+            chatBtn.title = 'Talk to us';
 
-const chatBtn = document.createElement('div');
-chatBtn.id = 'customChatBtn';
-chatBtn.title = 'Talk to us';
+            function applyBtnStyles() {
+                const isMobile = window.innerWidth < 700;
+                chatBtn.style.cssText = `
+                    position: fixed;
+                    bottom: clamp(16px, 4vw, 28px);
+                    right: clamp(16px, 4vw, 28px);
+                    width: ${isMobile ? '56px' : '10%'};
+                    height: ${isMobile ? '56px' : '60px'};
+                    overflow: hidden;
+                    z-index: 99999;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: ${isMobile ? '50%' : '8px'};
+                `;
+            }
 
-const img = document.createElement('img');
-img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
-img.style.cssText = `
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-`;
+            applyBtnStyles();
+            window.addEventListener('resize', applyBtnStyles);
 
-chatBtn.appendChild(img);
-chatBtn.addEventListener('click', openEmbeddedChat);
-chatBtn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        openEmbeddedChat();
-    }
-});
+            const img = document.createElement('img');
+            img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
+            img.style.cssText = `
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+            `;
 
-document.body.appendChild(chatBtn);
+            chatBtn.appendChild(img);
+            chatBtn.addEventListener('click', openEmbeddedChat);
+            chatBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openEmbeddedChat();
+                }
+            });
 
-            // ── 3. Show / Hide custom button helpers ──────────────────────────────
+            document.body.appendChild(chatBtn);
+
+            // ── 3. Show / Hide custom button helpers ──
             function showCustomBtn() {
                 const btn = document.getElementById('customChatBtn');
                 if (btn) btn.style.display = 'flex';
@@ -144,7 +138,7 @@ document.body.appendChild(chatBtn);
                 if (btn) btn.style.display = 'none';
             }
 
-            // ── 4. Embedded Messaging window event listeners ──────────────────────
+            // ── 4. Embedded Messaging window event listeners ──
             window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
                 showCustomBtn();
             });
@@ -157,7 +151,7 @@ document.body.appendChild(chatBtn);
                 hideCustomBtn();
             });
 
-            // ── 5. Open chat — official API with DOM click fallback ───────────────
+            // ── 5. Open chat — official API with DOM click fallback ──
             function openEmbeddedChat() {
                 try {
                     embeddedservice_bootstrap.utilAPI.launchChat();
@@ -175,7 +169,7 @@ document.body.appendChild(chatBtn);
                 hideCustomBtn();
             }
 
-            // ── 6. Fallback: poll for embedded button if not in DOM yet ───────────
+            // ── 6. Fallback: poll for embedded button if not in DOM yet ──
             function waitForEmbeddedBtn() {
                 const maxAttempts = 20;
                 let attempts = 0;
@@ -195,7 +189,7 @@ document.body.appendChild(chatBtn);
                 }, 300);
             }
 
-            // ── 7. CXone chat initialisation ──────────────────────────────────────
+            // ── 7. CXone chat initialisation ──
             function startCxoneChat(firstName, transcriptId, skillId) {
                 console.log('Entered into startCxoneChat');
                 (function (n, u) {
@@ -223,7 +217,7 @@ document.body.appendChild(chatBtn);
                 cxone('chat', 'autoStartSession');
             }
 
-            // ── 8. Get skill ID based on message content ──────────────────────────
+            // ── 8. Get skill ID based on message content ──
             function getSkillId(messageText) {
                 const text = messageText.toLowerCase();
                 if (text.includes('appointment cancellation')) return '31531982';
@@ -231,7 +225,7 @@ document.body.appendChild(chatBtn);
                 return '29204809';
             }
 
-            // ── 9. Salesforce Embedded Messaging init ─────────────────────────────
+            // ── 9. Salesforce Embedded Messaging init ──
             function initEmbeddedMessaging() {
                 let firstName = "";
                 let transcriptId = "";
@@ -288,7 +282,7 @@ document.body.appendChild(chatBtn);
                 }
             }
 
-            // ── 10. Load Salesforce bootstrap script & kick off init ───────────────
+            // ── 10. Load Salesforce bootstrap script & kick off init ──
             const sfScript = document.createElement('script');
             sfScript.type = 'text/javascript';
             sfScript.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106/assets/js/bootstrap.min.js';
