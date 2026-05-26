@@ -114,7 +114,8 @@
             `;
 
             const img = document.createElement('img');
-            img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
+            // src is set correctly by applyButtonShape(); placeholder avoids a broken-image flash
+            img.src = '';
             img.style.cssText = `
                 width: 100%;
                 height: 100%;
@@ -124,22 +125,27 @@
 
             chatBtn.appendChild(img);
 
-            // ── 4. Apply shape based on current screen width ──────────────────────
-            // Wide (>700px) → rectangular pill  |  Narrow (≤700px) → circle
+            // ── 4. Apply shape + image based on current screen width ─────────────
+            // Wide (>700px) → rectangular  |  Narrow (≤700px) → circle + different icon
+            const ICON_WIDE   = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
+            const ICON_NARROW = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779773864000/Agentforce_chat_icon_for_small_screen';
+
             function applyButtonShape() {
                 const btn = document.getElementById('customChatBtn');
                 if (!btn) return;
 
                 if (isWideScreen()) {
                     // Rectangular button (original proportions)
-                    btn.style.width  = '10vw';
-                    btn.style.height = '5vh';
+                    btn.style.width        = '10vw';
+                    btn.style.height       = '5vh';
                     btn.style.borderRadius = '8px';
+                    img.src = ICON_WIDE;
                 } else {
                     // Circular button for small screens
-                    btn.style.width  = '56px';
-                    btn.style.height = '56px';
+                    btn.style.width        = '56px';
+                    btn.style.height       = '56px';
                     btn.style.borderRadius = '50%';
+                    img.src = ICON_NARROW;
                 }
             }
 
