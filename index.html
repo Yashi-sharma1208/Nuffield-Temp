@@ -82,45 +82,56 @@
             document.head.appendChild(style);
 
             // ── 2. Create custom button (Now standard sizing for all devices) ──
-            const chatBtn = document.createElement('div');
-            chatBtn.id = 'customChatBtn';
-            chatBtn.title = 'Talk to us';
-            
-            // Note: Changed width/height from vmin/vmax to standard pixel sizing 
-            // so it remains legible and square on smaller mobile viewports.
-            chatBtn.style.cssText = `
-                position: fixed;
-                bottom: clamp(16px, 4vw, 28px);
-                right: clamp(16px, 4vw, 28px);
-                width: 10%;
-                height: 60px;
-                overflow: hidden;
-                z-index: 99999;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            `;
-            
-            const img = document.createElement('img');
-            img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
-            img.style.cssText = `
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                display: block;
-            `;
+            // ── 2. Create custom button & inject responsive styles via JS ──
+const btnStyle = document.createElement('style');
+btnStyle.textContent = `
+    #customChatBtn {
+        position: fixed;
+        bottom: clamp(16px, 4vw, 28px);
+        right: clamp(16px, 4vw, 28px);
+        width: 10%;
+        height: 60px;
+        overflow: hidden;
+        z-index: 99999;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+    @media (max-width: 699px) {
+        #customChatBtn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+        }
+    }
+`;
+document.head.appendChild(btnStyle);
 
-            chatBtn.appendChild(img);
-            chatBtn.addEventListener('click', openEmbeddedChat);
-            chatBtn.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    openEmbeddedChat();
-                }
-            });
+const chatBtn = document.createElement('div');
+chatBtn.id = 'customChatBtn';
+chatBtn.title = 'Talk to us';
 
-            document.body.appendChild(chatBtn);
+const img = document.createElement('img');
+img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
+img.style.cssText = `
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+`;
+
+chatBtn.appendChild(img);
+chatBtn.addEventListener('click', openEmbeddedChat);
+chatBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openEmbeddedChat();
+    }
+});
+
+document.body.appendChild(chatBtn);
 
             // ── 3. Show / Hide custom button helpers ──────────────────────────────
             function showCustomBtn() {
