@@ -70,49 +70,47 @@
     <script>
         (function () {
 
-            // ── 1. Hide native Salesforce button ONLY on screens wider than 700px ──
+            // ── 1. Hide native Salesforce button on ALL screen sizes ──────────────
+            // Custom button handles chat launch on every viewport width
             const style = document.createElement('style');
             style.textContent = `
-                @media (min-width: 701px) {
-                    #embeddedMessagingConversationButton,
-                    .embeddedMessagingConversationButtonWrapper {
-                        display: none !important;
-                        pointer-events: none !important;
-                    }
-                    #embeddedMessagingFrame.isMinimized {
-                        display: none !important;
-                        pointer-events: none !important;
-                    }
+                #embeddedMessagingConversationButton,
+                .embeddedMessagingConversationButtonWrapper {
+                    display: none !important;
+                    pointer-events: none !important;
+                }
+                #embeddedMessagingFrame.isMinimized {
+                    display: none !important;
+                    pointer-events: none !important;
                 }
             `;
             document.head.appendChild(style);
 
             // ── 2. Reliable width check using matchMedia ──────────────────────────
-            // matchMedia respects the viewport meta tag on real devices,
-            // making it the most reliable method across DevTools and real phones
             const mqlWide = window.matchMedia('(min-width: 701px)');
 
             function isWideScreen() {
                 return mqlWide.matches;
             }
 
-            // ── 3. Create custom button ───────────────────────────────────────────
+            // ── 3. Create custom button (always visible, shape depends on width) ──
             const chatBtn = document.createElement('div');
             chatBtn.id = 'customChatBtn';
             chatBtn.title = 'Talk to us';
+
+            // Base styles shared by both shapes
             chatBtn.style.cssText = `
-    position: fixed;
-    bottom: clamp(16px, 2vw, 28px);
-    right: clamp(16px, 2vw, 28px);
-    width: 10vw;
-    height: 5vh;
-    overflow: hidden;
-    z-index: 99999;
-    cursor: pointer;
-    display: ${isWideScreen() ? 'flex' : 'none'};
-    align-items: center;
-    justify-content: center;
-`;
+                position: fixed;
+                bottom: clamp(16px, 2vw, 28px);
+                right: clamp(16px, 2vw, 28px);
+                overflow: hidden;
+                z-index: 99999;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+
             const img = document.createElement('img');
             img.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/resource/1779698354000/Agentforce_chat_icon';
             img.style.cssText = `
@@ -123,6 +121,29 @@
             `;
 
             chatBtn.appendChild(img);
+
+            // ── 4. Apply shape based on current screen width ──────────────────────
+            // Wide (>700px) → rectangular pill  |  Narrow (≤700px) → circle
+            function applyButtonShape() {
+                const btn = document.getElementById('customChatBtn');
+                if (!btn) return;
+
+                if (isWideScreen()) {
+                    // Rectangular button (original proportions)
+                    btn.style.width  = '10vw';
+                    btn.style.height = '5vh';
+                    btn.style.borderRadius = '8px';
+                } else {
+                    // Circular button for small screens
+                    btn.style.width  = '56px';
+                    btn.style.height = '56px';
+                    btn.style.borderRadius = '50%';
+                }
+            }
+
+            // Apply shape immediately on load
+            applyButtonShape();
+
             chatBtn.addEventListener('click', openEmbeddedChat);
             chatBtn.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -133,12 +154,10 @@
 
             document.body.appendChild(chatBtn);
 
-            // ── 4. Show / Hide custom button helpers ──────────────────────────────
+            // ── 5. Show / Hide custom button helpers ──────────────────────────────
             function showCustomBtn() {
-                if (isWideScreen()) {
-                    const btn = document.getElementById('customChatBtn');
-                    if (btn) btn.style.display = 'flex';
-                }
+                const btn = document.getElementById('customChatBtn');
+                if (btn) btn.style.display = 'flex';
             }
 
             function hideCustomBtn() {
@@ -146,25 +165,19 @@
                 if (btn) btn.style.display = 'none';
             }
 
-            // ── 5. matchMedia change listener ─────────────────────────────────────
-            mqlWide.addEventListener('change', (e) => {
-                const btn = document.getElementById('customChatBtn');
-                if (!btn) return;
+            // ── 6. matchMedia change listener — update shape on resize ────────────
+            mqlWide.addEventListener('change', () => {
+                applyButtonShape();
 
-                if (!e.matches) {
-                    // ≤700px — hide custom button, native SF button takes over
-                    btn.style.display = 'none';
-                } else {
-                    // >700px — show custom button if chat is not currently open
-                    const frame = document.getElementById('embeddedMessagingFrame');
-                    const isOpen = frame &&
-                        !frame.classList.contains('isMinimized') &&
-                        frame.style.display !== 'none';
-                    if (!isOpen) btn.style.display = 'flex';
-                }
+                // If chat is currently open, keep the button hidden regardless of resize
+                const frame = document.getElementById('embeddedMessagingFrame');
+                const isOpen = frame &&
+                    !frame.classList.contains('isMinimized') &&
+                    frame.style.display !== 'none';
+                if (!isOpen) showCustomBtn();
             });
 
-            // ── 6. Embedded Messaging window event listeners ──────────────────────
+            // ── 7. Embedded Messaging window event listeners ──────────────────────
             window.addEventListener('onEmbeddedMessagingWindowMinimized', () => {
                 showCustomBtn();
             });
@@ -177,7 +190,7 @@
                 hideCustomBtn();
             });
 
-            // ── 7. Open chat — official API with DOM click fallback ───────────────
+            // ── 8. Open chat — official API with DOM click fallback ───────────────
             function openEmbeddedChat() {
                 try {
                     embeddedservice_bootstrap.utilAPI.launchChat();
@@ -195,7 +208,7 @@
                 hideCustomBtn();
             }
 
-            // ── 8. Fallback: poll for embedded button if not in DOM yet ───────────
+            // ── 9. Fallback: poll for embedded button if not in DOM yet ───────────
             function waitForEmbeddedBtn() {
                 const maxAttempts = 20;
                 let attempts = 0;
@@ -215,7 +228,7 @@
                 }, 300);
             }
 
-            // ── 9. CXone chat initialisation ──────────────────────────────────────
+            // ── 10. CXone chat initialisation ──────────────────────────────────────
             function startCxoneChat(firstName, transcriptId, skillId) {
                 console.log('Entered into startCxoneChat');
                 (function (n, u) {
@@ -243,7 +256,7 @@
                 cxone('chat', 'autoStartSession');
             }
 
-            // ── 10. Get skill ID based on message content ──────────────────────────
+            // ── 11. Get skill ID based on message content ──────────────────────────
             function getSkillId(messageText) {
                 const text = messageText.toLowerCase();
                 if (text.includes('appointment cancellation')) return '31531982';
@@ -251,7 +264,7 @@
                 return '29204809';
             }
 
-            // ── 11. Salesforce Embedded Messaging init ─────────────────────────────
+            // ── 12. Salesforce Embedded Messaging init ─────────────────────────────
             function initEmbeddedMessaging() {
                 let firstName = "";
                 let transcriptId = "";
@@ -296,19 +309,19 @@
                     });
 
                     embeddedservice_bootstrap.init(
-              '00Dw0000000lVoz',
-              'Agentforce_Customer_Support',
-              'https://nuffieldhealth-crm.my.site.com/ESWAgentforceCustomerSu1777529445343',
-              {
-                scrt2URL: 'https://nuffieldhealth-crm.my.salesforce-scrt.com'
-              }
-          );
+                        '00Dw0000000lVoz',
+                        'Agentforce_Customer_Support',
+                        'https://nuffieldhealth-crm.my.site.com/ESWAgentforceCustomerSu1777529445343',
+                        {
+                            scrt2URL: 'https://nuffieldhealth-crm.my.salesforce-scrt.com'
+                        }
+                    );
                 } catch (err) {
                     console.error('Error loading Embedded Messaging: ', err);
                 }
             }
 
-            // ── 12. Load Salesforce bootstrap script & kick off init ───────────────
+            // ── 13. Load Salesforce bootstrap script & kick off init ───────────────
             const sfScript = document.createElement('script');
             sfScript.type = 'text/javascript';
             sfScript.src = 'https://nuffieldhealth-crm.my.site.com/ESWAgentforceCustomerSu1777529445343/assets/js/bootstrap.min.js';
