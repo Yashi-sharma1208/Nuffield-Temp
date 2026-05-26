@@ -296,13 +296,13 @@
                     });
 
                     embeddedservice_bootstrap.init(
-                        '00DS900000DRZFB',
-                        'Agentforce_Customer_Support',
-                        'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106',
-                        {
-                            scrt2URL: 'https://nuffieldhealth-crm--mintdev.sandbox.my.salesforce-scrt.com'
-                        }
-                    );
+				      '00Dw0000000lVoz',
+				      'Agentforce_Customer_Support',
+				      'https://nuffieldhealth-crm.my.site.com/ESWAgentforceCustomerSu1777529445343',
+				      {
+					      scrt2URL: 'https://nuffieldhealth-crm.my.salesforce-scrt.com'
+				      }
+			    );
                 } catch (err) {
                     console.error('Error loading Embedded Messaging: ', err);
                 }
@@ -311,7 +311,7 @@
             // ── 12. Load Salesforce bootstrap script & kick off init ───────────────
             const sfScript = document.createElement('script');
             sfScript.type = 'text/javascript';
-            sfScript.src = 'https://nuffieldhealth-crm--mintdev.sandbox.my.site.com/ESWAgentforceCustomerSu1769670343106/assets/js/bootstrap.min.js';
+            sfScript.src = 'https://nuffieldhealth-crm.my.site.com/ESWAgentforceCustomerSu1777529445343/assets/js/bootstrap.min.js';
             sfScript.onload = initEmbeddedMessaging;
             document.body.appendChild(sfScript);
 
