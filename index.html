@@ -83,14 +83,12 @@
         img.src = isWideScreen() ? ICON_WIDE : ICON_NARROW;
     }
 
-    updateIcon();
-
     // 4. Show / Hide custom button
     function showCustomBtn() {
-    const btn = document.getElementById('customChatBtn');
-    if (btn) btn.style.display = 'flex';
-    updateIcon(); // always sync icon when button becomes visible
-}
+        const btn = document.getElementById('customChatBtn');
+        if (btn) btn.style.display = 'flex';
+        updateIcon(); // always sync icon when button becomes visible
+    }
 
     function hideCustomBtn() {
         const btn = document.getElementById('customChatBtn');
@@ -101,16 +99,16 @@
     const chatBtn = document.getElementById('customChatBtn');
 
     chatBtn.addEventListener('click', openEmbeddedChat);
-    
-    // 6. Update icon on screen resize; show button if chat is not open
-    mqlWide.addEventListener('change', () => {
-        updateIcon();
+    chatBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openEmbeddedChat();
+        }
+    });
 
-        const frame = document.getElementById('embeddedMessagingFrame');
-        const isOpen = frame &&
-            !frame.classList.contains('isMinimized') &&
-            frame.style.display !== 'none';
-        if (!isOpen) showCustomBtn();
+    // 6. Update icon continuously as window is resized
+    window.addEventListener('resize', () => {
+        updateIcon();
     });
 
     // 7. Embedded Messaging window event listeners
