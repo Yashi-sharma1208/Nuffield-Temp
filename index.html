@@ -87,9 +87,10 @@
 
     // 4. Show / Hide custom button
     function showCustomBtn() {
-        const btn = document.getElementById('customChatBtn');
-        if (btn) btn.style.display = 'flex';
-    }
+    const btn = document.getElementById('customChatBtn');
+    if (btn) btn.style.display = 'flex';
+    updateIcon(); // always sync icon when button becomes visible
+}
 
     function hideCustomBtn() {
         const btn = document.getElementById('customChatBtn');
